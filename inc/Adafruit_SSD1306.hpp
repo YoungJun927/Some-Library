@@ -16,7 +16,9 @@ BSD license, check license.txt for more information
 All text above, and the splash screen must be included in any redistribution
 *********************************************************************/
 #include "cox.h"
-#include "Adafruit_GFX.h"
+#include "SPI.hpp"
+#include "TwoWire.hpp"
+#include "Adafruit_GFX.hpp"
 
 #ifndef _Adafruit_SSD1306_H_
 #define _Adafruit_SSD1306_H_
@@ -46,9 +48,9 @@ typedef uint32_t PortMask;
     SSD1306_96_16
 
     -----------------------------------------------------------------------*/
-  #define SSD1306_128_64
-   // #define SSD1306_128_32
-//   #define SSD1306_96_16
+#define SSD1306_128_64
+// #define SSD1306_128_32
+// #define SSD1306_96_16
 /*=========================================================================*/
 
 #if defined SSD1306_128_64 && defined SSD1306_128_32
@@ -78,33 +80,22 @@ typedef uint32_t PortMask;
 #define SSD1306_INVERTDISPLAY 0xA7
 #define SSD1306_DISPLAYOFF 0xAE
 #define SSD1306_DISPLAYON 0xAF
-
 #define SSD1306_SETDISPLAYOFFSET 0xD3
 #define SSD1306_SETCOMPINS 0xDA
-
 #define SSD1306_SETVCOMDETECT 0xDB
-
 #define SSD1306_SETDISPLAYCLOCKDIV 0xD5
 #define SSD1306_SETPRECHARGE 0xD9
-
 #define SSD1306_SETMULTIPLEX 0xA8
-
 #define SSD1306_SETLOWCOLUMN 0x00
 #define SSD1306_SETHIGHCOLUMN 0x10
-
 #define SSD1306_SETSTARTLINE 0x40
-
 #define SSD1306_MEMORYMODE 0x20
 #define SSD1306_COLUMNADDR 0x21
 #define SSD1306_PAGEADDR   0x22
-
 #define SSD1306_COMSCANINC 0xC0
 #define SSD1306_COMSCANDEC 0xC8
-
 #define SSD1306_SEGREMAP 0xA0
-
 #define SSD1306_CHARGEPUMP 0x8D
-
 #define SSD1306_EXTERNALVCC 0x1
 #define SSD1306_SWITCHCAPVCC 0x2
 
@@ -119,11 +110,13 @@ typedef uint32_t PortMask;
 
 class Adafruit_SSD1306 : public Adafruit_GFX {
  public:
-  Adafruit_SSD1306(int8_t SID, int8_t SCLK, int8_t DC, int8_t RST, int8_t CS);
-  Adafruit_SSD1306(int8_t DC, int8_t RST, int8_t CS);
-  Adafruit_SSD1306(int8_t RST = -1);
+  //Adafruit_SSD1306(int8_t reset);
+  // Adafruit_SSD1306(int8_t SID, int8_t SCLK, int8_t DC, int8_t RST, int8_t CS);
+  // Adafruit_SSD1306(int8_t DC, int8_t RST, int8_t CS);
+  Adafruit_SSD1306(int8_t pinReset, TwoWire &wire, uint8_t i2caddr);
+  Adafruit_SSD1306(int8_t pinReset, SPI &spi, int8_t pinCs);
 
-  void begin(uint8_t switchvcc = SSD1306_SWITCHCAPVCC, uint8_t i2caddr = SSD1306_I2C_ADDRESS, bool reset=true);
+  void begin(uint8_t i2caddr, bool reset=true);
   void ssd1306_command(uint8_t c);
   void clearDisplay(void);
   void invertDisplay(uint8_t i);
@@ -141,10 +134,13 @@ class Adafruit_SSD1306 : public Adafruit_GFX {
   virtual void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
 
  private:
-  int8_t _i2caddr, _vccstate, sid, sclk, dc, rst, cs;
-  void fastSPIwrite(uint8_t c);
+  TwoWire *wire = NULL;
+  SPI *spi = NULL;
+  uint8_t _i2caddr;
+  int8_t _vccstate;
+  int8_t cs,rst = 0;
+  
 
-  boolean hwSPI;
 #ifdef HAVE_PORTREG
   PortReg *mosiport, *clkport, *csport, *dcport;
   PortMask mosipinmask, clkpinmask, cspinmask, dcpinmask;

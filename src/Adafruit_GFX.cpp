@@ -31,10 +31,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
  */
 #include "cox.h"
-
-#include "Adafruit_GFX.h"
-#include "glcdfont.c"
-
+#include "Adafruit_GFX.hpp"
+#include "glcdfont.cpp"
 
 // Many (but maybe not all) non-AVR board installs define macros
 // for compatibility with existing PROGMEM-reading AVR code.
@@ -50,14 +48,20 @@ POSSIBILITY OF SUCH DAMAGE.
  #define pgm_read_dword(addr) (*(const unsigned long *)(addr))
 #endif
 
+#if (SIZE_OF_POINTER == 4)
+  #define pgm_read_pointer(addr) (/*(void *)*/pgm_read_dword(addr))
+#elif (SIZE_OF_POINTER == 2)
+  #define pgm_read_pointer(addr) (/*(void *)*/pgm_read_word(addr))
+#else
 // Pointers are a peculiar case...typically 16-bit on AVR boards,
 // 32 bits elsewhere.  Try to accommodate both...
-
+#warning "SIZE_OF_POINTER not defined"
 #if !defined(__INT_MAX__) || (__INT_MAX__ > 0xFFFF)
  #define pgm_read_pointer(addr) ((void *)pgm_read_dword(addr))
 #else
  #define pgm_read_pointer(addr) ((void *)pgm_read_word(addr))
 #endif
+#endif //SIZE_OF_POINTER
 
 #ifndef min
 #define min(a,b) (((a) < (b)) ? (a) : (b))
@@ -110,9 +114,9 @@ void Adafruit_GFX::writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
 
     for (; x0<=x1; x0++) {
         if (steep) {
-            writePixel(y0, x0, color);
+            drawPixel(y0, x0, color);
         } else {
-            writePixel(x0, y0, color);
+            drawPixel(x0, y0, color);
         }
         err -= dy;
         if (err < 0) {
@@ -120,15 +124,6 @@ void Adafruit_GFX::writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
             err += dx;
         }
     }
-}
-
-void Adafruit_GFX::startWrite(){
-    // Overwrite in subclasses if desired!
-}
-
-void Adafruit_GFX::writePixel(int16_t x, int16_t y, uint16_t color){
-    // Overwrite in subclasses if startWrite is defined!
-    drawPixel(x, y, color);
 }
 
 // (x,y) is topmost point; if unsure, calling function
@@ -151,24 +146,14 @@ void Adafruit_GFX::writeFastHLine(int16_t x, int16_t y,
     drawFastHLine(x, y, w, color);
 }
 
-void Adafruit_GFX::writeFillRect(int16_t x, int16_t y, int16_t w, int16_t h,
-        uint16_t color) {
-    // Overwrite in subclasses if desired!
-    fillRect(x,y,w,h,color);
-}
-
-void Adafruit_GFX::endWrite(){
-    // Overwrite in subclasses if startWrite is defined!
-}
-
 // (x,y) is topmost point; if unsure, calling function
 // should sort endpoints or call drawLine() instead
 void Adafruit_GFX::drawFastVLine(int16_t x, int16_t y,
         int16_t h, uint16_t color) {
     // Update in subclasses if desired!
-    startWrite();
+
     writeLine(x, y, x, y+h-1, color);
-    endWrite();
+
 }
 
 // (x,y) is leftmost point; if unsure, calling function
@@ -176,19 +161,19 @@ void Adafruit_GFX::drawFastVLine(int16_t x, int16_t y,
 void Adafruit_GFX::drawFastHLine(int16_t x, int16_t y,
         int16_t w, uint16_t color) {
     // Update in subclasses if desired!
-    startWrite();
+
     writeLine(x, y, x+w-1, y, color);
-    endWrite();
+
 }
 
 void Adafruit_GFX::fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
         uint16_t color) {
     // Update in subclasses if desired!
-    startWrite();
+
     for (int16_t i=x; i<x+w; i++) {
         writeFastVLine(i, y, h, color);
     }
-    endWrite();
+
 }
 
 void Adafruit_GFX::fillScreen(uint16_t color) {
@@ -206,9 +191,9 @@ void Adafruit_GFX::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
         if(x0 > x1) _swap_int16_t(x0, x1);
         drawFastHLine(x0, y0, x1 - x0 + 1, color);
     } else {
-        startWrite();
+
         writeLine(x0, y0, x1, y1, color);
-        endWrite();
+
     }
 }
 
@@ -221,11 +206,11 @@ void Adafruit_GFX::drawCircle(int16_t x0, int16_t y0, int16_t r,
     int16_t x = 0;
     int16_t y = r;
 
-    startWrite();
-    writePixel(x0  , y0+r, color);
-    writePixel(x0  , y0-r, color);
-    writePixel(x0+r, y0  , color);
-    writePixel(x0-r, y0  , color);
+
+    drawPixel(x0  , y0+r, color);
+    drawPixel(x0  , y0-r, color);
+    drawPixel(x0+r, y0  , color);
+    drawPixel(x0-r, y0  , color);
 
     while (x<y) {
         if (f >= 0) {
@@ -237,16 +222,16 @@ void Adafruit_GFX::drawCircle(int16_t x0, int16_t y0, int16_t r,
         ddF_x += 2;
         f += ddF_x;
 
-        writePixel(x0 + x, y0 + y, color);
-        writePixel(x0 - x, y0 + y, color);
-        writePixel(x0 + x, y0 - y, color);
-        writePixel(x0 - x, y0 - y, color);
-        writePixel(x0 + y, y0 + x, color);
-        writePixel(x0 - y, y0 + x, color);
-        writePixel(x0 + y, y0 - x, color);
-        writePixel(x0 - y, y0 - x, color);
+        drawPixel(x0 + x, y0 + y, color);
+        drawPixel(x0 - x, y0 + y, color);
+        drawPixel(x0 + x, y0 - y, color);
+        drawPixel(x0 - x, y0 - y, color);
+        drawPixel(x0 + y, y0 + x, color);
+        drawPixel(x0 - y, y0 + x, color);
+        drawPixel(x0 + y, y0 - x, color);
+        drawPixel(x0 - y, y0 - x, color);
     }
-    endWrite();
+
 }
 
 void Adafruit_GFX::drawCircleHelper( int16_t x0, int16_t y0,
@@ -267,30 +252,30 @@ void Adafruit_GFX::drawCircleHelper( int16_t x0, int16_t y0,
         ddF_x += 2;
         f     += ddF_x;
         if (cornername & 0x4) {
-            writePixel(x0 + x, y0 + y, color);
-            writePixel(x0 + y, y0 + x, color);
+            drawPixel(x0 + x, y0 + y, color);
+            drawPixel(x0 + y, y0 + x, color);
         }
         if (cornername & 0x2) {
-            writePixel(x0 + x, y0 - y, color);
-            writePixel(x0 + y, y0 - x, color);
+            drawPixel(x0 + x, y0 - y, color);
+            drawPixel(x0 + y, y0 - x, color);
         }
         if (cornername & 0x8) {
-            writePixel(x0 - y, y0 + x, color);
-            writePixel(x0 - x, y0 + y, color);
+            drawPixel(x0 - y, y0 + x, color);
+            drawPixel(x0 - x, y0 + y, color);
         }
         if (cornername & 0x1) {
-            writePixel(x0 - y, y0 - x, color);
-            writePixel(x0 - x, y0 - y, color);
+            drawPixel(x0 - y, y0 - x, color);
+            drawPixel(x0 - x, y0 - y, color);
         }
     }
 }
 
 void Adafruit_GFX::fillCircle(int16_t x0, int16_t y0, int16_t r,
         uint16_t color) {
-    startWrite();
+
     writeFastVLine(x0, y0-r, 2*r+1, color);
     fillCircleHelper(x0, y0, r, 3, 0, color);
-    endWrite();
+
 }
 
 // Used to do circles and roundrects
@@ -327,19 +312,19 @@ void Adafruit_GFX::fillCircleHelper(int16_t x0, int16_t y0, int16_t r,
 // Draw a rectangle
 void Adafruit_GFX::drawRect(int16_t x, int16_t y, int16_t w, int16_t h,
         uint16_t color) {
-    startWrite();
+
     writeFastHLine(x, y, w, color);
     writeFastHLine(x, y+h-1, w, color);
     writeFastVLine(x, y, h, color);
     writeFastVLine(x+w-1, y, h, color);
-    endWrite();
+
 }
 
 // Draw a rounded rectangle
 void Adafruit_GFX::drawRoundRect(int16_t x, int16_t y, int16_t w,
         int16_t h, int16_t r, uint16_t color) {
     // smarter version
-    startWrite();
+
     writeFastHLine(x+r  , y    , w-2*r, color); // Top
     writeFastHLine(x+r  , y+h-1, w-2*r, color); // Bottom
     writeFastVLine(x    , y+r  , h-2*r, color); // Left
@@ -349,20 +334,20 @@ void Adafruit_GFX::drawRoundRect(int16_t x, int16_t y, int16_t w,
     drawCircleHelper(x+w-r-1, y+r    , r, 2, color);
     drawCircleHelper(x+w-r-1, y+h-r-1, r, 4, color);
     drawCircleHelper(x+r    , y+h-r-1, r, 8, color);
-    endWrite();
+
 }
 
 // Fill a rounded rectangle
 void Adafruit_GFX::fillRoundRect(int16_t x, int16_t y, int16_t w,
         int16_t h, int16_t r, uint16_t color) {
     // smarter version
-    startWrite();
-    writeFillRect(x+r, y, w-2*r, h, color);
+
+    fillRect(x+r, y, w-2*r, h, color);
 
     // draw four corners
     fillCircleHelper(x+w-r-1, y+r, r, 1, h-2*r-1, color);
     fillCircleHelper(x+r    , y+r, r, 2, h-2*r-1, color);
-    endWrite();
+
 }
 
 // Draw a triangle
@@ -390,7 +375,7 @@ void Adafruit_GFX::fillTriangle(int16_t x0, int16_t y0,
         _swap_int16_t(y0, y1); _swap_int16_t(x0, x1);
     }
 
-    startWrite();
+
     if(y0 == y2) { // Handle awkward all-on-same-line case as its own thing
         a = b = x0;
         if(x1 < a)      a = x1;
@@ -398,7 +383,7 @@ void Adafruit_GFX::fillTriangle(int16_t x0, int16_t y0,
         if(x2 < a)      a = x2;
         else if(x2 > b) b = x2;
         writeFastHLine(a, y0, b-a+1, color);
-        endWrite();
+
         return;
     }
 
@@ -451,7 +436,7 @@ void Adafruit_GFX::fillTriangle(int16_t x0, int16_t y0,
         if(a > b) _swap_int16_t(a,b);
         writeFastHLine(a, y, b-a+1, color);
     }
-    endWrite();
+
 }
 
 // BITMAP / XBITMAP / GRAYSCALE / RGB BITMAP FUNCTIONS ---------------------
@@ -464,15 +449,15 @@ void Adafruit_GFX::drawBitmap(int16_t x, int16_t y,
     int16_t byteWidth = (w + 7) / 8; // Bitmap scanline pad = whole byte
     uint8_t byte = 0;
 
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++) {
             if(i & 7) byte <<= 1;
             else      byte   = pgm_read_byte(&bitmap[j * byteWidth + i / 8]);
-            if(byte & 0x80) writePixel(x+i, y, color);
+            if(byte & 0x80) drawPixel(x+i, y, color);
         }
     }
-    endWrite();
+
 }
 
 // Draw a PROGMEM-resident 1-bit image at the specified (x,y) position,
@@ -485,15 +470,15 @@ void Adafruit_GFX::drawBitmap(int16_t x, int16_t y,
     int16_t byteWidth = (w + 7) / 8; // Bitmap scanline pad = whole byte
     uint8_t byte = 0;
 
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
             if(i & 7) byte <<= 1;
             else      byte   = pgm_read_byte(&bitmap[j * byteWidth + i / 8]);
-            writePixel(x+i, y, (byte & 0x80) ? color : bg);
+            drawPixel(x+i, y, (byte & 0x80) ? color : bg);
         }
     }
-    endWrite();
+
 }
 
 // Draw a RAM-resident 1-bit image at the specified (x,y) position,
@@ -504,15 +489,15 @@ void Adafruit_GFX::drawBitmap(int16_t x, int16_t y,
     int16_t byteWidth = (w + 7) / 8; // Bitmap scanline pad = whole byte
     uint8_t byte = 0;
 
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
             if(i & 7) byte <<= 1;
             else      byte   = bitmap[j * byteWidth + i / 8];
-            if(byte & 0x80) writePixel(x+i, y, color);
+            if(byte & 0x80) drawPixel(x+i, y, color);
         }
     }
-    endWrite();
+
 }
 
 // Draw a RAM-resident 1-bit image at the specified (x,y) position,
@@ -524,15 +509,15 @@ void Adafruit_GFX::drawBitmap(int16_t x, int16_t y,
     int16_t byteWidth = (w + 7) / 8; // Bitmap scanline pad = whole byte
     uint8_t byte = 0;
 
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
             if(i & 7) byte <<= 1;
             else      byte   = bitmap[j * byteWidth + i / 8];
-            writePixel(x+i, y, (byte & 0x80) ? color : bg);
+            drawPixel(x+i, y, (byte & 0x80) ? color : bg);
         }
     }
-    endWrite();
+
 }
 
 // Draw PROGMEM-resident XBitMap Files (*.xbm), exported from GIMP,
@@ -546,17 +531,17 @@ void Adafruit_GFX::drawXBitmap(int16_t x, int16_t y,
     int16_t byteWidth = (w + 7) / 8; // Bitmap scanline pad = whole byte
     uint8_t byte = 0;
 
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
             if(i & 7) byte >>= 1;
             else      byte   = pgm_read_byte(&bitmap[j * byteWidth + i / 8]);
             // Nearly identical to drawBitmap(), only the bit order
             // is reversed here (left-to-right = LSB to MSB):
-            if(byte & 0x01) writePixel(x+i, y, color);
+            if(byte & 0x01) drawPixel(x+i, y, color);
         }
     }
-    endWrite();
+
 }
 
 // Draw a PROGMEM-resident 8-bit image (grayscale) at the specified (x,y)
@@ -564,13 +549,13 @@ void Adafruit_GFX::drawXBitmap(int16_t x, int16_t y,
 // no color reduction/expansion is performed.
 void Adafruit_GFX::drawGrayscaleBitmap(int16_t x, int16_t y,
   const uint8_t bitmap[], int16_t w, int16_t h) {
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
-            writePixel(x+i, y, (uint8_t)pgm_read_byte(&bitmap[j * w + i]));
+            drawPixel(x+i, y, (uint8_t)pgm_read_byte(&bitmap[j * w + i]));
         }
     }
-    endWrite();
+
 }
 
 // Draw a RAM-resident 8-bit image (grayscale) at the specified (x,y)
@@ -578,13 +563,13 @@ void Adafruit_GFX::drawGrayscaleBitmap(int16_t x, int16_t y,
 // no color reduction/expansion is performed.
 void Adafruit_GFX::drawGrayscaleBitmap(int16_t x, int16_t y,
   uint8_t *bitmap, int16_t w, int16_t h) {
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
-            writePixel(x+i, y, bitmap[j * w + i]);
+            drawPixel(x+i, y, bitmap[j * w + i]);
         }
     }
-    endWrite();
+
 }
 
 // Draw a PROGMEM-resident 8-bit image (grayscale) with a 1-bit mask
@@ -597,17 +582,17 @@ void Adafruit_GFX::drawGrayscaleBitmap(int16_t x, int16_t y,
   int16_t w, int16_t h) {
     int16_t bw   = (w + 7) / 8; // Bitmask scanline pad = whole byte
     uint8_t byte = 0;
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
             if(i & 7) byte <<= 1;
             else      byte   = pgm_read_byte(&mask[j * bw + i / 8]);
             if(byte & 0x80) {
-                writePixel(x+i, y, (uint8_t)pgm_read_byte(&bitmap[j * w + i]));
+                drawPixel(x+i, y, (uint8_t)pgm_read_byte(&bitmap[j * w + i]));
             }
         }
     }
-    endWrite();
+
 }
 
 // Draw a RAM-resident 8-bit image (grayscale) with a 1-bit mask
@@ -619,43 +604,43 @@ void Adafruit_GFX::drawGrayscaleBitmap(int16_t x, int16_t y,
   uint8_t *bitmap, uint8_t *mask, int16_t w, int16_t h) {
     int16_t bw   = (w + 7) / 8; // Bitmask scanline pad = whole byte
     uint8_t byte = 0;
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
             if(i & 7) byte <<= 1;
             else      byte   = mask[j * bw + i / 8];
             if(byte & 0x80) {
-                writePixel(x+i, y, bitmap[j * w + i]);
+                drawPixel(x+i, y, bitmap[j * w + i]);
             }
         }
     }
-    endWrite();
+
 }
 
 // Draw a PROGMEM-resident 16-bit image (RGB 5/6/5) at the specified (x,y)
 // position.  For 16-bit display devices; no color reduction performed.
 void Adafruit_GFX::drawRGBBitmap(int16_t x, int16_t y,
   const uint16_t bitmap[], int16_t w, int16_t h) {
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
-            writePixel(x+i, y, pgm_read_word(&bitmap[j * w + i]));
+            drawPixel(x+i, y, pgm_read_word(&bitmap[j * w + i]));
         }
     }
-    endWrite();
+
 }
 
 // Draw a RAM-resident 16-bit image (RGB 5/6/5) at the specified (x,y)
 // position.  For 16-bit display devices; no color reduction performed.
 void Adafruit_GFX::drawRGBBitmap(int16_t x, int16_t y,
   uint16_t *bitmap, int16_t w, int16_t h) {
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
-            writePixel(x+i, y, bitmap[j * w + i]);
+            drawPixel(x+i, y, bitmap[j * w + i]);
         }
     }
-    endWrite();
+
 }
 
 // Draw a PROGMEM-resident 16-bit image (RGB 5/6/5) with a 1-bit mask
@@ -667,17 +652,17 @@ void Adafruit_GFX::drawRGBBitmap(int16_t x, int16_t y,
   int16_t w, int16_t h) {
     int16_t bw   = (w + 7) / 8; // Bitmask scanline pad = whole byte
     uint8_t byte = 0;
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
             if(i & 7) byte <<= 1;
             else      byte   = pgm_read_byte(&mask[j * bw + i / 8]);
             if(byte & 0x80) {
-                writePixel(x+i, y, pgm_read_word(&bitmap[j * w + i]));
+                drawPixel(x+i, y, pgm_read_word(&bitmap[j * w + i]));
             }
         }
     }
-    endWrite();
+
 }
 
 // Draw a RAM-resident 16-bit image (RGB 5/6/5) with a 1-bit mask
@@ -688,17 +673,17 @@ void Adafruit_GFX::drawRGBBitmap(int16_t x, int16_t y,
   uint16_t *bitmap, uint8_t *mask, int16_t w, int16_t h) {
     int16_t bw   = (w + 7) / 8; // Bitmask scanline pad = whole byte
     uint8_t byte = 0;
-    startWrite();
+
     for(int16_t j=0; j<h; j++, y++) {
         for(int16_t i=0; i<w; i++ ) {
             if(i & 7) byte <<= 1;
             else      byte   = mask[j * bw + i / 8];
             if(byte & 0x80) {
-                writePixel(x+i, y, bitmap[j * w + i]);
+                drawPixel(x+i, y, bitmap[j * w + i]);
             }
         }
     }
-    endWrite();
+
 }
 
 // TEXT- AND CHARACTER-HANDLING FUNCTIONS ----------------------------------
@@ -717,28 +702,28 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
 
         if(!_cp437 && (c >= 176)) c++; // Handle 'classic' charset behavior
 
-        startWrite();
+
         for(int8_t i=0; i<5; i++ ) { // Char bitmap = 5 columns
             uint8_t line = pgm_read_byte(&font[c * 5 + i]);
             for(int8_t j=0; j<8; j++, line >>= 1) {
                 if(line & 1) {
                     if(size == 1)
-                        writePixel(x+i, y+j, color);
+                        drawPixel(x+i, y+j, color);
                     else
-                        writeFillRect(x+i*size, y+j*size, size, size, color);
+                        fillRect(x+i*size, y+j*size, size, size, color);
                 } else if(bg != color) {
                     if(size == 1)
-                        writePixel(x+i, y+j, bg);
+                        drawPixel(x+i, y+j, bg);
                     else
-                        writeFillRect(x+i*size, y+j*size, size, size, bg);
+                        fillRect(x+i*size, y+j*size, size, size, bg);
                 }
             }
         }
         if(bg != color) { // If opaque, draw vertical line for last column
             if(size == 1) writeFastVLine(x+5, y, 8, bg);
-            else          writeFillRect(x+5*size, y, size, 8*size, bg);
+            else          fillRect(x+5*size, y, size, 8*size, bg);
         }
-        endWrite();
+
 
     } else { // Custom font
 
@@ -781,7 +766,7 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
         // displays supporting setAddrWindow() and pushColors()), but haven't
         // implemented this yet.
 
-        startWrite();
+
         for(yy=0; yy<h; yy++) {
             for(xx=0; xx<w; xx++) {
                 if(!(bit++ & 7)) {
@@ -789,24 +774,24 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
                 }
                 if(bits & 0x80) {
                     if(size == 1) {
-                        writePixel(x+xo+xx, y+yo+yy, color);
+                        drawPixel(x+xo+xx, y+yo+yy, color);
                     } else {
-                        writeFillRect(x+(xo16+xx)*size, y+(yo16+yy)*size,
+                        fillRect(x+(xo16+xx)*size, y+(yo16+yy)*size,
                           size, size, color);
                     }
                 }
                 bits <<= 1;
             }
         }
-        endWrite();
+
 
     } // End classic vs custom font
 }
 
 
-size_t Adafruit_GFX::write(uint8_t c) {
+// size_t Adafruit_GFX::write(uint8_t c) {
 
-// void Adafruit_GFX::write(uint8_t c) {
+void Adafruit_GFX::write(uint8_t c) {
 
     if(!gfxFont) { // 'Classic' built-in font
 
@@ -929,7 +914,7 @@ void Adafruit_GFX::setFont(const GFXfont *f) {
         // Move cursor pos up 6 pixels so it's at top-left of char.
         cursor_y -= 6;
     }
-    gfxFont = (GFXfont *)f;
+    gfxFont = f;
 }
 
 // Broke this out as it's used by both the PROGMEM- and RAM-resident
