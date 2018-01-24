@@ -5,13 +5,12 @@
 #include "SparkFunCCS811.hpp"
 
 PMS3003 pms3003 = PMS3003(Serial2, D3, D4);
+CCS811 mysensor(Wire, 0x5B);
 RHT03 rht;
+LoRaMacKR920 LoRaWAN = LoRaMacKR920(SX1276, 10);
 
 Timer test;
 Timer timerSend;
-
-CCS811 mysensor(Wire, 0x5B);
-LoRaMacKR920 LoRaWAN = LoRaMacKR920(SX1276, 10);
 
 int32_t temp1_0=0;
 int32_t temp10_0=0;
