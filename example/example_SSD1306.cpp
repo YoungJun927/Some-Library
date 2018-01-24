@@ -3,7 +3,7 @@
 #include <Adafruit_GFX.hpp>
 
 #define OLED_RESET D2
-Adafruit_SSD1306 display(OLED_RESET, Wire,0x3D);
+Adafruit_SSD1306 display(OLED_RESET, Wire, 0x3D);
 
 Timer timerHello;
 
@@ -46,9 +46,7 @@ void testfillroundrect(void) {
 }
 
 static void taskHello(void*) {
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
   display.drawChar(0,0,'A',WHITE,1,1);
-
   display.display();
   delay(2000);
 
@@ -76,7 +74,9 @@ static void taskHello(void*) {
 
 void setup() {
   Serial.begin(9600);
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+  display.begin(SSD1306_SWITCHCAPVCC);
+  display.clearDisplay();
+  display.display();
   timerHello.onFired(taskHello,NULL);
   timerHello.startPeriodic(5000);
  }
