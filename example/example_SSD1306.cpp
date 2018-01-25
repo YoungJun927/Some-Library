@@ -5,6 +5,8 @@
 #define OLED_RESET D2
 Adafruit_SSD1306 display(OLED_RESET, Wire, 0x3D);
 
+int i = 0;
+
 Timer timerHello;
 
 void testdrawrect(void) {
@@ -46,30 +48,33 @@ void testfillroundrect(void) {
 }
 
 static void taskHello(void*) {
-  display.drawChar(0,0,'A',WHITE,1,1);
-  display.display();
-  delay(2000);
-
-  display.clearDisplay();
-  display.drawPixel(10, 10, WHITE);
-  display.display();
-  delay(2000);
-
-  display.clearDisplay();
-  testdrawrect();
-  display.display();
-  delay(2000);
-
-  display.clearDisplay();
-  testfillrect();
-  display.display();
-  delay(2000);
-
-  display.clearDisplay();
-  testfillroundrect();
-  display.display();
-  delay(2000);
-  display.clearDisplay();
+  i++;
+  if(i==1){
+    display.clearDisplay();
+    display.drawChar(0,0,'A',WHITE,1,1);
+    display.display();
+  }
+  else if(i==2){
+    display.clearDisplay();
+    display.drawPixel(10, 10, WHITE);
+    display.display();
+  }
+  else if(i==3){
+    display.clearDisplay();
+    testdrawrect();
+    display.display();
+  }
+  else if(i==4){
+    display.clearDisplay();
+    testfillrect();
+    display.display();
+  }
+  else{
+    display.clearDisplay();
+    testfillroundrect();
+    display.display();
+    i=0;
+  }
 }
 
 void setup() {
@@ -78,5 +83,5 @@ void setup() {
   display.clearDisplay();
   display.display();
   timerHello.onFired(taskHello,NULL);
-  timerHello.startPeriodic(5000);
+  timerHello.startPeriodic(3000);
  }
