@@ -3,9 +3,10 @@
 #define returnSign 0x76
 #define serialNumber 0x00
 
-class V_MT9V011 {
+class VC0706 {
 public:
-  V_MT9V011(SerialPort &);
+  VC0706(SerialPort &);
+
   void begin();
   void stopFrame();
   void sendData(char *args, uint8_t Len);
@@ -16,28 +17,37 @@ public:
   void reset();
   void setSize(int size);
   void getVer();
-  static void readImage(const char *buf, uint32_t size);
+  void startCapture(void (*func)(), uint16_t cycle);
+  void endCapture();
+  void setMotionCtrl (uint8_t len, uint8_t motionAttribute, uint8_t ctrlItme, uint8_t secondBit, uint8_t thirdBit=0);
 
+  static void motionStatus(void *);
+  static void readImage(const char *buf, uint32_t size);
 private:
+  uint8_t len[4] = {0,};
+  uint8_t data = 0;
+  uint8_t previousData = 0;
   uint16_t index;
   uint16_t imageIndex = 0;
   uint32_t imageSize = 0;
-  SerialPort *port;
+  uint32_t motionCycle = 0;
+
   unsigned char flag = 0;
   char *imageBuf = NULL;
-  uint8_t len[4] = {0,};
-  uint8_t previousData = 0;
-
-  void eventDataReceived();
-  static void SerialDataReceived(void *ctx);
-  void (*gotImageCallback)(const char *buf, uint32_t size) = NULL;
-
+  SerialPort *port;
   enum flagType {
     stopFrameFlag = 1,
     dataLenFlag = 2,
     imageFlag = 4,
     getVerFlag = 8,
     resetFlag = 16,
-    resumeFlag = 32
+    resumeFlag = 32,
+    motionCtrlFlag = 64,
+    captureFlag = 128
   };
+
+  void eventDataReceived();
+  static void SerialDataReceived(void *ctx);
+  void (*gotImageCallback)(const char *buf, uint32_t size) = NULL;
+  void (*successCapture)() = NULL;
 };
