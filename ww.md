@@ -1,10 +1,10 @@
 Wiring Table
 ========
 
-ESP-WROOM-32  | PMS3003              
+ESP-WROOM-32  | PMS3003               ESP-WROOM-32 | SSD1306
 ------------------  | -----------              
- | NC
- | NC
+NC | NC
+NC | NC
 D18 | Reset
 RX2 | TX
 TX2 | RX
