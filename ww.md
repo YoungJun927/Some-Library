@@ -5,7 +5,7 @@ ESP-WROOM-32  | PMS3003
 |:------------------:  | :-----------:|              
 |  | NC
 |  | NC
-<center>D18</center> | Reset
+D18 | Reset
 RX2 | TX
 TX2 | RX
 D19 | Set
