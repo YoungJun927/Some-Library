@@ -7,8 +7,8 @@ Pin Map
 | RX2 | TX | |
 | TX2 | RX | |
 | D19 | Set | |
-| GND | GND | GND |
 | Vin | VCC(5V) |
+| GND | GND | GND |
 | D27 | | SDA |
 | D14 | | SCL |
 | 3.3V | | Vin |
