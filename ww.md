@@ -2,9 +2,9 @@ Wiring Table
 ========
 
 ESP-WROOM-32  | PMS3003
-------------------  | -----------              
-NC | NC
-NC | NC
+|:------------------:  | :-----------:|              
+|  | NC
+|  | NC
 <center>D18</center> | Reset
 RX2 | TX
 TX2 | RX
