@@ -9,6 +9,7 @@ Pin Map
 | D19 | Set | |
 | Vin | VCC(5V) |
 | GND | GND | GND |
+| 3.3V | | Vin |
 | D27 | | SDA |
 | D14 | | SCL |
-| 3.3V | | Vin |
+
