@@ -6,8 +6,5 @@ Pin Map
 | USB PORT | 3V | 5V |
 | GND | GND | GND | 
 | RX2  |  <-> | TX|
-<<<<<<< HEAD
 | TX2  |  <-> | RX |
 
-=======
->>>>>>> 6450ddf932236ef2044d3698fff2d86b0f80388f
